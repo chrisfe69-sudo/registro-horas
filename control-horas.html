@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro de horas</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#355E56">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F7F7F5;
+    --surface:#FFFFFF;
+    --ink:#22252A;
+    --ink-muted:#6B7178;
+    --ink-faint:#B4B7BC;
+    --accent:#355E56;
+    --accent-soft:#E1EAE7;
+    --accent-hover:#2A4B45;
+    --border:#E4E3DF;
+    --danger:#A6473A;
+    --weekend-bg:#ECEAE5;
+    --holiday-bg:#F4E4DF;
+    --holiday-text:#A6473A;
+    --vacation-bg:#F1E3B8;
+    --vacation-text:#8A6A1F;
+  }
+  :root[data-theme="oscuro"]{
+    --bg:#1B1D1F;
+    --surface:#242629;
+    --ink:#ECEDEE;
+    --ink-muted:#9AA0A6;
+    --ink-faint:#5C6066;
+    --accent:#5AA396;
+    --accent-soft:#26403B;
+    --accent-hover:#6FB6A8;
+    --border:#35383C;
+    --danger:#D98A7E;
+    --weekend-bg:#31353A;
+    --holiday-bg:#3A2A26;
+    --holiday-text:#E0988A;
+    --vacation-bg:#463C22;
+    --vacation-text:#E3C878;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    transition:background-color .2s ease, color .2s ease;
+  }
+  .wrap{
+    max-width:640px;
+    margin:0 auto;
+    padding:32px 16px 96px;
+  }
+  .top-bar{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin-bottom:24px;
+  }
+  h1{
+    font-size:1.25rem;
+    font-weight:600;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  .hamburger{
+    background:none;
+    border:none;
+    cursor:pointer;
+    padding:8px;
+    margin:-8px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:4px;
+    flex-shrink:0;
+  }
+  .hamburger span{
+    display:block;
+    width:20px;
+    height:2px;
+    background:var(--ink);
+    border-radius:2px;
+  }
+  nav.tabs{
+    display:flex;
+    gap:20px;
+    border-bottom:1px solid var(--border);
+    margin-bottom:28px;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  nav.tabs::-webkit-scrollbar{ display:none; }
+  nav.tabs button{
+    background:none;
+    border:none;
+    font-family:inherit;
+    font-size:0.92rem;
+    color:var(--ink-muted);
+    padding:0 0 12px;
+    cursor:pointer;
+    position:relative;
+    font-weight:500;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  nav.tabs button.active{ color:var(--ink); }
+  nav.tabs button.active::after{
+    content:'';
+    position:absolute;
+    left:0;right:0;bottom:-1px;
+    height:2px;
+    background:var(--accent);
+  }
+  nav.tabs button:focus-visible,
+  button:focus-visible,
+  select:focus-visible,
+  input:focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:2px;
+  }
+  .view{display:none;}
+  .view.active{display:block;}
+
+  /* CALENDARIO */
+  .cal-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:20px;
+  }
+  .cal-title{
+    font-size:1.05rem;
+    font-weight:600;
+    text-transform:capitalize;
+  }
+  .cal-nav{display:flex; gap:4px;}
+  .cal-nav button{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:7px;
+    width:32px; height:32px;
+    font-family:inherit;
+    font-size:1rem;
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .cal-nav button:hover{ background:var(--accent-soft); }
+  .weekdays{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    margin-bottom:6px;
+  }
+  .weekdays span{
+    text-align:center;
+    font-size:0.75rem;
+    color:var(--ink-faint);
+    font-weight:500;
+  }
+  .cal-grid{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:3px;
+  }
+  .day-cell{
+    min-height:56px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    background:var(--surface);
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    justify-content:flex-start;
+    cursor:pointer;
+    padding:5px 5px;
+    gap:1px;
+    overflow:hidden;
+  }
+  .day-cell:active{ border-color:var(--accent); }
+  .day-cell:hover{ border-color:var(--accent); }
+  .day-cell.empty{ visibility:hidden; cursor:default; border:none; min-height:0; }
+  .day-cell.today{ border-color:var(--accent); border-width:2px; }
+  .day-cell.weekend{ background:var(--weekend-bg); }
+  .day-cell.holiday{ background:var(--holiday-bg); }
+  .day-cell.holiday .day-num{ color:var(--holiday-text); font-weight:600; }
+  .day-cell.has-data{ background:var(--accent-soft); }
+  .day-cell.vacation{ background:var(--vacation-bg); }
+  .day-cell.vacation .day-num{ color:var(--vacation-text); font-weight:600; }
+  .day-num{ font-size:0.78rem; color:var(--ink-muted); line-height:1.3; }
+  .day-cell.has-data .day-num{ color:var(--ink); font-weight:500; }
+  .day-hours{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.65rem;
+    font-weight:600;
+    color:var(--accent);
+    line-height:1.3;
+  }
+  .day-note{
+    font-size:0.62rem;
+    color:var(--ink-muted);
+    line-height:1.3;
+    max-width:100%;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .cal-legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:16px;
+    margin-top:16px;
+  }
+  .cal-legend span{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:0.78rem;
+    color:var(--ink-muted);
+  }
+  .legend-swatch{
+    width:11px; height:11px; border-radius:3px; border:1px solid var(--border);
+    display:inline-block;
+  }
+  .legend-swatch.weekend{ background:var(--weekend-bg); }
+  .legend-swatch.holiday{ background:var(--holiday-bg); }
+  .legend-swatch.data{ background:var(--accent-soft); }
+  .legend-swatch.vacation{ background:var(--vacation-bg); }
+  .link-row{ margin-top:22px; }
+  .link-btn{
+    background:none; border:none; color:var(--ink-muted);
+    font-family:inherit; font-size:0.85rem; cursor:pointer; padding:0;
+    text-decoration:underline; text-underline-offset:3px;
+  }
+  .link-btn:hover{ color:var(--ink); }
+
+  /* MODAL DIA */
+  .overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,0.35);
+    display:none; align-items:center; justify-content:center; padding:20px; z-index:10;
+  }
+  .overlay.active{display:flex;}
+  .modal{
+    background:var(--surface);
+    border-radius:10px;
+    padding:28px;
+    width:100%;
+    max-width:400px;
+    max-height:85vh;
+    overflow-y:auto;
+    position:relative;
+  }
+  .modal h2{ font-size:1.05rem; margin:0 0 4px; text-transform:capitalize; }
+  .modal .modal-sub{ font-size:0.85rem; color:var(--ink-muted); margin:0 0 4px; }
+  .modal .modal-holiday{ font-size:0.85rem; color:var(--holiday-text); margin:0 0 16px; font-weight:500; }
+
+  /* DRAWER (menú de configuración) */
+  #menu-overlay{ justify-content:flex-start; padding:0; background:rgba(0,0,0,0.35); }
+  .drawer{
+    background:var(--surface);
+    height:100%;
+    width:min(300px, 84vw);
+    max-width:none;
+    border-radius:0;
+    padding:28px 24px;
+    overflow-y:auto;
+    position:relative;
+    transform:translateX(-100%);
+    transition:transform .25s ease;
+  }
+  #menu-overlay.active .drawer{ transform:translateX(0); }
+  .theme-toggle{
+    display:flex;
+    gap:8px;
+    background:var(--bg);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:4px;
+  }
+  .theme-option{
+    flex:1;
+    background:none;
+    border:none;
+    border-radius:6px;
+    padding:9px 0;
+    font-family:inherit;
+    font-size:0.88rem;
+    font-weight:500;
+    color:var(--ink-muted);
+    cursor:pointer;
+  }
+  .theme-option.active{
+    background:var(--accent);
+    color:#fff;
+  }
+  .entry{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:12px 0;
+    border-bottom:1px solid var(--border);
+    gap:10px;
+  }
+  .entry-lugar{ font-weight:500; font-size:0.95rem; }
+  .entry-nota{ font-size:0.8rem; color:var(--ink-muted); margin-top:2px; }
+  .entry-hours{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:0.9rem;
+    color:var(--ink-muted);
+  }
+  .entry-actions{ display:flex; gap:10px; flex-shrink:0; }
+  .icon-btn{
+    background:none; border:none; cursor:pointer; color:var(--ink-faint);
+    font-size:0.8rem; font-family:inherit; padding:8px;
+    min-height:32px;
+  }
+  .icon-btn:hover{ color:var(--ink); }
+  .icon-btn.danger:hover{ color:var(--danger); }
+  .field{ margin-bottom:16px; }
+  .field label{
+    display:block;
+    font-size:0.85rem;
+    color:var(--ink-muted);
+    margin-bottom:8px;
+  }
+  select, input[type=text], input[type=number], input[type=date]{
+    width:100%;
+    font-family:inherit;
+    font-size:16px;
+    padding:12px 12px;
+    border:1px solid var(--border);
+    border-radius:7px;
+    background:var(--bg);
+    color:var(--ink);
+  }
+  input[type=number]{ -moz-appearance:textfield; }
+  select:disabled{ opacity:0.5; cursor:not-allowed; }
+  .checkbox-label{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:0.95rem;
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .checkbox-label input[type=checkbox]{
+    width:18px; height:18px;
+    accent-color:var(--accent);
+    cursor:pointer;
+  }
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button{
+    -webkit-appearance:none;
+    margin:0;
+  }
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:100%;
+    padding:13px 20px;
+    border-radius:7px;
+    border:none;
+    font-family:inherit;
+    font-size:0.95rem;
+    font-weight:600;
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  .btn-primary{ background:var(--accent); color:#fff; }
+  .btn-primary:hover{ background:var(--accent-hover); }
+  .btn-secondary{ background:var(--bg); color:var(--ink); border:1px solid var(--border); }
+  .add-form{ margin-top:18px; padding-top:18px; border-top:1px solid var(--border); }
+  .add-form-title{ font-size:0.85rem; color:var(--ink-muted); margin:0 0 14px; }
+  .modal-close{
+    position:absolute; top:20px; right:20px;
+    background:none; border:none; color:var(--ink-muted);
+    font-size:1.1rem; cursor:pointer; line-height:1;
+  }
+  .empty-day{ color:var(--ink-muted); font-size:0.9rem; padding:8px 0 4px; }
+  .range-row{ display:flex; gap:10px; }
+  .range-row .field{ flex:1; }
+
+  /* FESTIVOS LOCALES modal list */
+  .festivo-item{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:10px 0; border-bottom:1px solid var(--border); gap:10px;
+  }
+  .festivo-fecha{ font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:var(--ink-muted); }
+  .festivo-nombre{ font-size:0.9rem; }
+  .modal-note{ font-size:0.8rem; color:var(--ink-muted); margin:0 0 18px; line-height:1.5; }
+
+  /* RESUMEN */
+  .summary-block{ margin-bottom:28px; }
+  .summary-title{ font-size:0.85rem; color:var(--ink-muted); margin:0 0 4px; }
+  .summary-total{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:1.75rem;
+    margin:0 0 16px;
+  }
+  .bar-row{ margin-bottom:14px; }
+  .bar-label{ display:flex; justify-content:space-between; font-size:0.9rem; margin-bottom:6px; }
+  .bar-label span:last-child{ font-family:'IBM Plex Mono',monospace; color:var(--ink-muted); }
+  .bar-track{ height:6px; background:var(--accent-soft); border-radius:3px; overflow:hidden; }
+  .bar-fill{ height:100%; background:var(--accent); border-radius:3px; }
+  .empty{ color:var(--ink-muted); font-size:0.95rem; padding:40px 0; text-align:center; }
+
+  /* CONFIGURACION */
+  .lugar-row{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    padding:10px 0;
+    border-bottom:1px solid var(--border);
+  }
+  .lugar-row input{ flex:1; }
+  .lugar-row button{
+    background:var(--bg); color:var(--ink); border:1px solid var(--border);
+    border-radius:7px; padding:11px 16px; font-family:inherit; font-size:0.9rem; cursor:pointer;
+    white-space:nowrap; flex-shrink:0;
+  }
+  .lugar-row button:hover{ background:var(--accent-soft); }
+  .lugar-saved{ color:var(--accent); font-size:0.8rem; margin-left:4px; }
+
+  @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
+
+  @media (max-width:420px){
+    .day-hours{ font-size:0.58rem; }
+    .day-num{ font-size:0.74rem; }
+    .day-note{ font-size:0.56rem; }
+    .day-cell{ min-height:52px; padding:4px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top-bar">
+    <button class="hamburger" id="btn-menu" aria-label="Abrir configuración">
+      <span></span><span></span><span></span>
+    </button>
+    <h1>Registro de horas</h1>
+  </div>
+  <nav class="tabs">
+    <button class="tab-btn active" data-view="calendario">Calendario</button>
+    <button class="tab-btn" data-view="resumen">Resumen</button>
+  </nav>
+
+  <section id="view-calendario" class="view active">
+    <div class="cal-header">
+      <span class="cal-title" id="cal-title"></span>
+      <div class="cal-nav">
+        <button id="cal-prev" aria-label="Mes anterior">‹</button>
+        <button id="cal-next" aria-label="Mes siguiente">›</button>
+      </div>
+    </div>
+    <div class="weekdays">
+      <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-legend">
+      <span><span class="legend-swatch data"></span>Con horas</span>
+      <span><span class="legend-swatch weekend"></span>Fin de semana</span>
+      <span><span class="legend-swatch holiday"></span>Festivo</span>
+      <span><span class="legend-swatch vacation"></span>Vacaciones</span>
+    </div>
+    <div class="link-row">
+      <button class="link-btn" id="btn-festivos-locales">Gestionar festivos locales de Burriana</button>
+    </div>
+  </section>
+
+  <section id="view-resumen" class="view">
+    <div class="field">
+      <label for="resumen-tipo">Calcular resumen de</label>
+      <select id="resumen-tipo">
+        <option value="semana">Esta semana</option>
+        <option value="mes" selected>Este mes</option>
+        <option value="mes-anterior">Mes anterior</option>
+        <option value="personalizado">Rango personalizado</option>
+      </select>
+    </div>
+    <div class="range-row" id="rango-personalizado" style="display:none;">
+      <div class="field">
+        <label for="rango-desde">Desde</label>
+        <input type="date" id="rango-desde">
+      </div>
+      <div class="field">
+        <label for="rango-hasta">Hasta</label>
+        <input type="date" id="rango-hasta">
+      </div>
+    </div>
+    <div id="resumen-content"></div>
+  </section>
+</div>
+
+<div class="overlay" id="menu-overlay">
+  <div class="drawer" id="menu-drawer">
+    <button class="modal-close" id="menu-close" aria-label="Cerrar">✕</button>
+    <h2 style="margin-bottom:24px;">Configuración</h2>
+
+    <p class="summary-title" style="margin-bottom:16px;">Apariencia</p>
+    <div class="theme-toggle">
+      <button class="theme-option active" id="tema-claro" data-tema="claro">Claro</button>
+      <button class="theme-option" id="tema-oscuro" data-tema="oscuro">Oscuro</button>
+    </div>
+
+    <p class="summary-title" style="margin:32px 0 16px;">Lugares de trabajo</p>
+    <div class="link-row" style="margin-top:0;">
+      <button class="link-btn" id="btn-lugares">Editar lugares de trabajo</button>
+    </div>
+
+    <p class="summary-title" style="margin:32px 0 16px;">Precio por hora</p>
+    <div class="lugar-row" style="border-bottom:none;">
+      <input type="number" id="precio-hora-input" inputmode="decimal" step="0.01" min="0" placeholder="Ej. 12.50">
+      <button id="btn-guardar-precio">Guardar</button>
+    </div>
+    <p class="modal-note" style="margin-top:8px;">Se usa para calcular el valor de las horas extra en el Resumen.</p>
+  </div>
+</div>
+
+<div class="overlay" id="lugares-overlay">
+  <div class="modal">
+    <button class="modal-close" id="lugares-close" aria-label="Cerrar">✕</button>
+    <h2 style="margin-bottom:4px;">Lugares de trabajo</h2>
+    <p class="modal-note">Corrige aquí el nombre de cualquier lugar ya creado. Los cambios se aplican también a las jornadas ya registradas.</p>
+    <div id="lugares-config-list"></div>
+  </div>
+</div>
+
+<div class="overlay" id="day-overlay">
+  <div class="modal">
+    <button class="modal-close" id="day-close" aria-label="Cerrar">✕</button>
+    <h2 id="day-title"></h2>
+    <p class="modal-sub" id="day-total"></p>
+    <p class="modal-holiday" id="day-holiday" style="display:none;"></p>
+    <div id="day-entries"></div>
+    <button class="btn btn-secondary" id="btn-vacaciones" style="margin-top:6px;">Marcar como vacaciones</button>
+    <div class="add-form">
+      <p class="add-form-title" id="add-form-title">Añadir jornada</p>
+      <div class="field">
+        <label for="input-lugar">Lugar</label>
+        <select id="input-lugar">
+          <option value="">Selecciona un lugar</option>
+          <option value="__nuevo__">+ Añadir nuevo lugar</option>
+        </select>
+      </div>
+      <div class="field" id="nuevo-lugar-field" style="display:none;">
+        <label for="input-nuevo-lugar">Nombre del nuevo lugar</label>
+        <input type="text" id="input-nuevo-lugar" placeholder="Ej. Oficina centro">
+      </div>
+      <div class="range-row">
+        <div class="field" style="margin-bottom:0;">
+          <label for="input-horas">Horas trabajadas</label>
+          <input type="number" id="input-horas" inputmode="decimal" step="0.25" min="0" max="24" placeholder="Ej. 7.5">
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label for="input-horas-extra">Horas extra</label>
+          <input type="number" id="input-horas-extra" inputmode="decimal" step="0.25" min="0" max="24" placeholder="Ej. 1.5">
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:0; margin-top:16px;">
+        <label class="checkbox-label">
+          <input type="checkbox" id="check-pago-extra">
+          Pago extra
+        </label>
+        <div id="pago-extra-field" style="display:none; margin-top:8px;">
+          <input type="number" id="input-pago-extra" inputmode="decimal" step="0.01" min="0" placeholder="Ej. 15">
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:0; margin-top:16px;">
+        <label for="input-nota">Nota (opcional)</label>
+        <input type="text" id="input-nota" placeholder="Ej. turno de tarde">
+      </div>
+      <button class="btn btn-primary" id="btn-guardar" style="margin-top:18px;">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="festivos-overlay">
+  <div class="modal">
+    <button class="modal-close" id="festivos-close" aria-label="Cerrar">✕</button>
+    <h2>Festivos locales de Burriana</h2>
+    <p class="modal-note">Los festivos nacionales y de la Comunitat Valenciana se marcan automáticamente. Los locales de Burriana (Sant Blai, Mare de Déu de la Misericòrdia...) los fija cada año el ayuntamiento, así que revísalos y ajústalos aquí si cambian.</p>
+    <div id="festivos-list"></div>
+    <div class="add-form">
+      <p class="add-form-title">Añadir festivo local</p>
+      <div class="field">
+        <label for="festivo-fecha-input">Fecha</label>
+        <input type="date" id="festivo-fecha-input">
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label for="festivo-nombre-input">Nombre</label>
+        <input type="text" id="festivo-nombre-input" placeholder="Ej. Lunes de la Magdalena">
+      </div>
+      <button class="btn btn-primary" id="btn-add-festivo" style="margin-top:18px;">Añadir</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'control-horas-data';
+let data = { registros: [], lugares: [], festivosLocales: null };
+let calMonth = new Date().getMonth();
+let calYear = new Date().getFullYear();
+let selectedFecha = null;
+let editingEntryId = null;
+
+const FESTIVOS_LOCALES_DEFECTO = [
+  { fecha:'2026-02-03', nombre:'Sant Blai' },
+  { fecha:'2026-09-08', nombre:'Mare de Déu de la Misericòrdia' }
+];
+const FESTIVOS_LOCALES_ANTERIORES = [
+  { fecha:'2026-03-09', nombre:'Lunes de la Magdalena' },
+  { fecha:'2026-06-29', nombre:'San Pedro' }
+];
+
+function pad(n){ return String(n).padStart(2,'0'); }
+function fechaHoy(){ const d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function fmtFechaLarga(fechaStr){
+  const d = new Date(fechaStr+'T00:00:00');
+  return d.toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long' });
+}
+function fmtHoras(h){
+  const horas = Math.floor(h);
+  const mins = Math.round((h-horas)*60);
+  return mins===0 ? horas+'h' : horas+'h '+pad(mins)+'m';
+}
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+/* --- Cálculo de festivos --- */
+function domingoDePascua(year){
+  const a = year % 19;
+  const b = Math.floor(year/100);
+  const c = year % 100;
+  const d = Math.floor(b/4);
+  const e = b % 4;
+  const f = Math.floor((b+8)/25);
+  const g = Math.floor((b-f+1)/3);
+  const h = (19*a+b-d-g+15)%30;
+  const i = Math.floor(c/4);
+  const k = c%4;
+  const l = (32+2*e+2*i-h-k)%7;
+  const m = Math.floor((a+11*h+22*l)/451);
+  const mes = Math.floor((h+l-7*m+114)/31);
+  const dia = ((h+l-7*m+114)%31)+1;
+  return new Date(year, mes-1, dia);
+}
+function sumarDias(d, n){ const r = new Date(d); r.setDate(r.getDate()+n); return r; }
+function fechaISO(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+
+function festivosFijosDelAnio(year){
+  const pascua = domingoDePascua(year);
+  const viernesSanto = sumarDias(pascua, -2);
+  const lunesPascua = sumarDias(pascua, 1);
+  return {
+    [year+'-01-01']: 'Año Nuevo',
+    [year+'-01-06']: 'Epifanía del Señor',
+    [fechaISO(viernesSanto)]: 'Viernes Santo',
+    [fechaISO(lunesPascua)]: 'Lunes de Pascua',
+    [year+'-03-19']: 'San José',
+    [year+'-05-01']: 'Fiesta del Trabajo',
+    [year+'-06-24']: 'San Juan',
+    [year+'-08-15']: 'Asunción de la Virgen',
+    [year+'-10-09']: 'Día de la Comunitat Valenciana',
+    [year+'-10-12']: 'Fiesta Nacional de España',
+    [year+'-12-08']: 'Inmaculada Concepción',
+    [year+'-12-25']: 'Natividad del Señor'
+  };
+}
+
+function festivoDeFecha(fechaStr){
+  const year = parseInt(fechaStr.slice(0,4));
+  const fijos = festivosFijosDelAnio(year);
+  if(fijos[fechaStr]) return fijos[fechaStr];
+  const local = (data.festivosLocales || []).find(f => f.fecha === fechaStr);
+  return local ? local.nombre : null;
+}
+function esFinDeSemana(fechaStr){
+  const d = new Date(fechaStr+'T00:00:00');
+  const dia = d.getDay();
+  return dia === 0 || dia === 6;
+}
+function esVacacion(fechaStr){
+  return (data.vacaciones || []).includes(fechaStr);
+}
+
+async function load(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY, false);
+    if(res && res.value){ data = JSON.parse(res.value); }
+  }catch(e){ /* sin datos todavia */ }
+  if(!data.festivosLocales){ data.festivosLocales = FESTIVOS_LOCALES_DEFECTO.slice(); }
+  if(data.festivosVersion !== 2){
+    data.festivosLocales = data.festivosLocales.filter(f =>
+      !FESTIVOS_LOCALES_ANTERIORES.some(v => v.fecha === f.fecha && v.nombre === f.nombre)
+    );
+    FESTIVOS_LOCALES_DEFECTO.forEach(def => {
+      if(!data.festivosLocales.some(f => f.fecha === def.fecha)){
+        data.festivosLocales.push({ ...def });
+      }
+    });
+    data.festivosVersion = 2;
+  }
+  if(typeof data.precioHora !== 'number') data.precioHora = 0;
+  if(!Array.isArray(data.vacaciones)) data.vacaciones = [];
+  if(data.tema !== 'claro' && data.tema !== 'oscuro') data.tema = 'claro';
+  aplicarTema(data.tema);
+  save();
+  render();
+}
+async function save(){
+  try{ await window.storage.set(STORAGE_KEY, JSON.stringify(data), false); }
+  catch(e){ console.error('No se pudo guardar', e); }
+}
+
+function render(){
+  renderCalendario();
+  renderResumen();
+  renderConfiguracionLugares();
+}
+
+function registrosDeDia(fecha){
+  return data.registros.filter(r => r.fecha === fecha);
+}
+function totalDeDia(fecha){
+  return registrosDeDia(fecha).reduce((s,r) => s + r.horas + (r.horasExtra || 0), 0);
+}
+function notaDelDia(fecha){
+  const regs = registrosDeDia(fecha).filter(r => r.nota);
+  if(regs.length === 0) return null;
+  if(regs.length === 1) return regs[0].nota;
+  return regs[0].nota + ' +' + (regs.length - 1);
+}
+
+function renderCalendario(){
+  const titulo = new Date(calYear, calMonth, 1).toLocaleDateString('es-ES', { month:'long', year:'numeric' });
+  document.getElementById('cal-title').textContent = titulo;
+
+  const primerDiaSemana = (new Date(calYear, calMonth, 1).getDay() + 6) % 7;
+  const diasEnMes = new Date(calYear, calMonth+1, 0).getDate();
+  const hoy = fechaHoy();
+
+  let html = '';
+  for(let i=0;i<primerDiaSemana;i++){
+    html += '<div class="day-cell empty"></div>';
+  }
+  for(let dia=1; dia<=diasEnMes; dia++){
+    const fecha = calYear+'-'+pad(calMonth+1)+'-'+pad(dia);
+    const total = totalDeDia(fecha);
+    const festivo = festivoDeFecha(fecha);
+    const finde = esFinDeSemana(fecha);
+    const clases = ['day-cell'];
+    if(fecha === hoy) clases.push('today');
+    if(finde) clases.push('weekend');
+    if(festivo) clases.push('holiday');
+    if(total > 0) clases.push('has-data');
+    if(esVacacion(fecha)) clases.push('vacation');
+    const nota = notaDelDia(fecha);
+    html += `<div class="${clases.join(' ')}" data-fecha="${fecha}" title="${festivo ? escapeHtml(festivo) : ''}">
+      <span class="day-num">${dia}</span>
+      ${total > 0 ? `<span class="day-hours">${fmtHoras(total)}</span>` : ''}
+      ${nota ? `<span class="day-note">${escapeHtml(nota)}</span>` : ''}
+    </div>`;
+  }
+  document.getElementById('cal-grid').innerHTML = html;
+  document.querySelectorAll('.day-cell:not(.empty)').forEach(cell => {
+    cell.onclick = () => abrirDia(cell.dataset.fecha);
+  });
+}
+
+document.getElementById('cal-prev').onclick = () => {
+  calMonth--; if(calMonth<0){ calMonth=11; calYear--; } renderCalendario();
+};
+document.getElementById('cal-next').onclick = () => {
+  calMonth++; if(calMonth>11){ calMonth=0; calYear++; } renderCalendario();
+};
+
+function poblarSelectLugares(){
+  const select = document.getElementById('input-lugar');
+  const opciones = data.lugares.map(l => `<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('');
+  select.innerHTML = `<option value="">Selecciona un lugar</option>${opciones}<option value="__nuevo__">+ Añadir nuevo lugar</option>`;
+}
+
+function actualizarBotonVacaciones(){
+  const btn = document.getElementById('btn-vacaciones');
+  const esVac = esVacacion(selectedFecha);
+  btn.textContent = esVac ? 'Quitar marca de vacaciones' : 'Marcar como vacaciones';
+  const select = document.getElementById('input-lugar');
+  select.disabled = esVac;
+  select.title = esVac ? 'No disponible en días de vacaciones' : '';
+  if(esVac){
+    document.getElementById('nuevo-lugar-field').style.display = 'none';
+  }
+}
+
+document.getElementById('btn-vacaciones').onclick = () => {
+  if(esVacacion(selectedFecha)){
+    data.vacaciones = data.vacaciones.filter(f => f !== selectedFecha);
+  } else {
+    data.vacaciones.push(selectedFecha);
+  }
+  save();
+  actualizarBotonVacaciones();
+  renderCalendario();
+};
+
+function abrirDia(fecha){
+  selectedFecha = fecha;
+  editingEntryId = null;
+  document.getElementById('day-title').textContent = fmtFechaLarga(fecha);
+  const total = totalDeDia(fecha);
+  document.getElementById('day-total').textContent = total > 0 ? `Total: ${fmtHoras(total)}` : 'Sin horas registradas';
+  const festivo = festivoDeFecha(fecha);
+  const elHoliday = document.getElementById('day-holiday');
+  if(festivo){ elHoliday.textContent = 'Festivo — '+festivo; elHoliday.style.display = 'block'; }
+  else { elHoliday.style.display = 'none'; }
+  actualizarBotonVacaciones();
+  renderEntradasDelDia();
+  poblarSelectLugares();
+  document.getElementById('input-lugar').value = '';
+  document.getElementById('nuevo-lugar-field').style.display = 'none';
+  document.getElementById('input-nuevo-lugar').value = '';
+  document.getElementById('input-horas').value = '';
+  document.getElementById('input-horas-extra').value = '';
+  document.getElementById('input-pago-extra').value = '';
+  document.getElementById('check-pago-extra').checked = false;
+  document.getElementById('pago-extra-field').style.display = 'none';
+  document.getElementById('input-nota').value = '';
+  document.getElementById('add-form-title').textContent = 'Añadir jornada';
+  document.getElementById('btn-guardar').textContent = 'Guardar';
+  document.getElementById('day-overlay').classList.add('active');
+}
+
+function renderEntradasDelDia(){
+  const cont = document.getElementById('day-entries');
+  const regs = registrosDeDia(selectedFecha);
+  if(regs.length === 0){
+    cont.innerHTML = '<p class="empty-day">Todavía no hay ninguna jornada este día.</p>';
+    return;
+  }
+  cont.innerHTML = regs.map(r => `
+    <div class="entry">
+      <div>
+        <div class="entry-lugar">${escapeHtml(r.lugar)}</div>
+        ${r.nota ? `<div class="entry-nota">${escapeHtml(r.nota)}</div>` : ''}
+      </div>
+      <span class="entry-hours">${fmtHoras(r.horas)}${r.horasExtra ? ' + '+fmtHoras(r.horasExtra)+' extra' : ''}${r.pagoExtra ? ' · +'+r.pagoExtra.toFixed(2)+' €' : ''}</span>
+      <div class="entry-actions">
+        <button class="icon-btn" onclick="editarEntrada('${r.id}')">Editar</button>
+        <button class="icon-btn danger" onclick="borrarEntrada('${r.id}')">Borrar</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function editarEntrada(id){
+  const reg = data.registros.find(r => r.id === id);
+  if(!reg) return;
+  editingEntryId = id;
+  poblarSelectLugares();
+  document.getElementById('input-lugar').value = reg.lugar;
+  document.getElementById('nuevo-lugar-field').style.display = 'none';
+  document.getElementById('input-horas').value = reg.horas;
+  document.getElementById('input-horas-extra').value = reg.horasExtra || '';
+  document.getElementById('input-pago-extra').value = reg.pagoExtra || '';
+  document.getElementById('check-pago-extra').checked = !!reg.pagoExtra;
+  document.getElementById('pago-extra-field').style.display = reg.pagoExtra ? 'block' : 'none';
+  document.getElementById('input-nota').value = reg.nota || '';
+  document.getElementById('add-form-title').textContent = 'Editar jornada';
+  document.getElementById('btn-guardar').textContent = 'Guardar cambios';
+}
+
+function borrarEntrada(id){
+  data.registros = data.registros.filter(r => r.id !== id);
+  save();
+  renderEntradasDelDia();
+  document.getElementById('day-total').textContent = totalDeDia(selectedFecha) > 0
+    ? `Total: ${fmtHoras(totalDeDia(selectedFecha))}` : 'Sin horas registradas';
+  renderCalendario();
+  renderResumen();
+}
+
+document.getElementById('input-lugar').onchange = () => {
+  const val = document.getElementById('input-lugar').value;
+  document.getElementById('nuevo-lugar-field').style.display = val === '__nuevo__' ? 'block' : 'none';
+};
+
+document.getElementById('check-pago-extra').onchange = (e) => {
+  document.getElementById('pago-extra-field').style.display = e.target.checked ? 'block' : 'none';
+  if(!e.target.checked) document.getElementById('input-pago-extra').value = '';
+};
+
+['input-horas','input-horas-extra'].forEach(id => {
+  document.getElementById(id).addEventListener('input', (e) => {
+    if(parseFloat(e.target.value) > 24) e.target.value = 24;
+  });
+});
+
+document.getElementById('btn-guardar').onclick = () => {
+  let lugar = document.getElementById('input-lugar').value;
+  if(lugar === '__nuevo__'){
+    lugar = document.getElementById('input-nuevo-lugar').value.trim();
+    if(!lugar) return;
+    if(!data.lugares.includes(lugar)) data.lugares.push(lugar);
+  }
+  const horas = Math.min(parseFloat(document.getElementById('input-horas').value), 24);
+  const horasExtraVal = document.getElementById('input-horas-extra').value;
+  const horasExtra = horasExtraVal ? Math.min(parseFloat(horasExtraVal), 24) : 0;
+  const pagoExtraVal = document.getElementById('input-pago-extra').value;
+  const pagoExtra = (document.getElementById('check-pago-extra').checked && pagoExtraVal) ? parseFloat(pagoExtraVal) : 0;
+  const nota = document.getElementById('input-nota').value.trim();
+  if(!lugar || isNaN(horas) || horas <= 0) return;
+
+  if(editingEntryId){
+    const reg = data.registros.find(r => r.id === editingEntryId);
+    reg.lugar = lugar;
+    reg.horas = horas;
+    reg.horasExtra = horasExtra;
+    reg.pagoExtra = pagoExtra;
+    reg.nota = nota;
+  } else {
+    data.registros.push({ id:'r'+Date.now(), fecha:selectedFecha, lugar, horas, horasExtra, pagoExtra, nota });
+  }
+  save();
+  editingEntryId = null;
+  document.getElementById('input-lugar').value = '';
+  document.getElementById('nuevo-lugar-field').style.display = 'none';
+  document.getElementById('input-horas').value = '';
+  document.getElementById('input-horas-extra').value = '';
+  document.getElementById('input-pago-extra').value = '';
+  document.getElementById('check-pago-extra').checked = false;
+  document.getElementById('pago-extra-field').style.display = 'none';
+  document.getElementById('input-nota').value = '';
+  document.getElementById('add-form-title').textContent = 'Añadir jornada';
+  document.getElementById('btn-guardar').textContent = 'Guardar';
+  renderEntradasDelDia();
+  const total = totalDeDia(selectedFecha);
+  document.getElementById('day-total').textContent = total > 0 ? `Total: ${fmtHoras(total)}` : 'Sin horas registradas';
+  renderCalendario();
+  renderResumen();
+  if(total >= 8){
+    document.getElementById('day-overlay').classList.remove('active');
+  }
+};
+
+document.getElementById('day-close').onclick = () => {
+  document.getElementById('day-overlay').classList.remove('active');
+};
+document.getElementById('day-overlay').onclick = (e) => {
+  if(e.target.id === 'day-overlay') document.getElementById('day-overlay').classList.remove('active');
+};
+
+/* --- Festivos locales: gestión --- */
+document.getElementById('btn-festivos-locales').onclick = () => {
+  renderFestivosLocales();
+  document.getElementById('festivos-overlay').classList.add('active');
+};
+document.getElementById('festivos-close').onclick = () => {
+  document.getElementById('festivos-overlay').classList.remove('active');
+};
+document.getElementById('festivos-overlay').onclick = (e) => {
+  if(e.target.id === 'festivos-overlay') document.getElementById('festivos-overlay').classList.remove('active');
+};
+
+function renderFestivosLocales(){
+  const cont = document.getElementById('festivos-list');
+  const lista = (data.festivosLocales || []).slice().sort((a,b) => a.fecha.localeCompare(b.fecha));
+  if(lista.length === 0){
+    cont.innerHTML = '<p class="empty-day">No has añadido ningún festivo local todavía.</p>';
+    return;
+  }
+  cont.innerHTML = lista.map(f => `
+    <div class="festivo-item">
+      <div>
+        <div class="festivo-nombre">${escapeHtml(f.nombre)}</div>
+        <div class="festivo-fecha">${fmtFechaLarga(f.fecha)}</div>
+      </div>
+      <button class="icon-btn danger" onclick="borrarFestivoLocal('${f.fecha}')">Borrar</button>
+    </div>
+  `).join('');
+}
+
+function borrarFestivoLocal(fecha){
+  data.festivosLocales = data.festivosLocales.filter(f => f.fecha !== fecha);
+  save();
+  renderFestivosLocales();
+  renderCalendario();
+}
+
+document.getElementById('btn-add-festivo').onclick = () => {
+  const fecha = document.getElementById('festivo-fecha-input').value;
+  const nombre = document.getElementById('festivo-nombre-input').value.trim();
+  if(!fecha || !nombre) return;
+  data.festivosLocales = (data.festivosLocales || []).filter(f => f.fecha !== fecha);
+  data.festivosLocales.push({ fecha, nombre });
+  save();
+  document.getElementById('festivo-fecha-input').value = '';
+  document.getElementById('festivo-nombre-input').value = '';
+  renderFestivosLocales();
+  renderCalendario();
+};
+
+/* --- Resumen --- */
+document.getElementById('resumen-tipo').onchange = () => {
+  const tipo = document.getElementById('resumen-tipo').value;
+  document.getElementById('rango-personalizado').style.display = tipo === 'personalizado' ? 'flex' : 'none';
+  renderResumen();
+};
+document.getElementById('rango-desde').onchange = renderResumen;
+document.getElementById('rango-hasta').onchange = renderResumen;
+
+function rangoSeleccionado(){
+  const tipo = document.getElementById('resumen-tipo').value;
+  const ahora = new Date();
+  if(tipo === 'semana'){
+    const inicio = new Date(ahora);
+    const diaSemana = (inicio.getDay() + 6) % 7;
+    inicio.setDate(inicio.getDate() - diaSemana);
+    inicio.setHours(0,0,0,0);
+    return { desde: inicio, hasta: null, etiqueta: 'Esta semana' };
+  }
+  if(tipo === 'mes'){
+    return { desde: new Date(ahora.getFullYear(), ahora.getMonth(), 1), hasta: null, etiqueta: 'Este mes' };
+  }
+  if(tipo === 'mes-anterior'){
+    const desde = new Date(ahora.getFullYear(), ahora.getMonth()-1, 1);
+    const hasta = new Date(ahora.getFullYear(), ahora.getMonth(), 0);
+    hasta.setHours(23,59,59,999);
+    return { desde, hasta, etiqueta: 'Mes anterior' };
+  }
+  const desdeStr = document.getElementById('rango-desde').value;
+  const hastaStr = document.getElementById('rango-hasta').value;
+  const desde = desdeStr ? new Date(desdeStr+'T00:00:00') : null;
+  const hasta = hastaStr ? new Date(hastaStr+'T23:59:59') : null;
+  return { desde, hasta, etiqueta: 'Rango personalizado' };
+}
+
+function renderResumen(){
+  const cont = document.getElementById('resumen-content');
+  if(data.registros.length === 0){
+    cont.innerHTML = '<p class="empty">Todavía no hay datos suficientes para un resumen.</p>';
+    return;
+  }
+  const { desde, hasta, etiqueta } = rangoSeleccionado();
+  if(!desde){
+    cont.innerHTML = '<p class="empty">Elige una fecha de inicio para calcular el resumen.</p>';
+    return;
+  }
+  const fechaADate = f => new Date(f+'T00:00:00');
+  const enRango = r => {
+    const d = fechaADate(r.fecha);
+    if(d < desde) return false;
+    if(hasta && d > hasta) return false;
+    return true;
+  };
+  const seleccion = data.registros.filter(enRango);
+  const totalNormal = seleccion.reduce((s,r) => s + r.horas, 0);
+  const totalExtra = seleccion.reduce((s,r) => s + (r.horasExtra || 0), 0);
+  const totalPagoExtra = seleccion.reduce((s,r) => s + (r.pagoExtra || 0), 0);
+
+  const porLugar = {};
+  seleccion.forEach(r => { porLugar[r.lugar] = (porLugar[r.lugar] || 0) + r.horas + (r.horasExtra || 0); });
+  const maxLugar = Math.max(...Object.values(porLugar), 1);
+  const lugaresOrdenados = Object.entries(porLugar).sort((a,b) => b[1]-a[1]);
+
+  if(seleccion.length === 0){
+    cont.innerHTML = `<p class="empty">Sin horas registradas en este periodo.</p>`;
+    return;
+  }
+
+  const precioHora = data.precioHora || 0;
+  const valorHorasExtra = totalExtra * precioHora;
+  const importeExtra = valorHorasExtra + totalPagoExtra;
+
+  cont.innerHTML = `
+    <div class="summary-block">
+      <p class="summary-title">${etiqueta}</p>
+      <p class="summary-total">${fmtHoras(totalNormal)}</p>
+      <p class="modal-sub" style="margin:-12px 0 20px;">Horas normales</p>
+      ${totalExtra > 0 ? `
+        <p class="summary-total">${fmtHoras(totalExtra)}</p>
+        <p class="modal-sub" style="margin:-12px 0 20px;">Horas extra</p>
+      ` : ''}
+      ${(totalExtra > 0 || totalPagoExtra > 0) ? `
+        <p class="summary-total">${importeExtra.toFixed(2)} €</p>
+        <p class="modal-sub" style="margin:-12px 0 4px;">Pago extra</p>
+        ${totalExtra > 0 ? `<p class="modal-sub" style="margin:0 0 2px;">· De horas extra: ${valorHorasExtra.toFixed(2)} €</p>` : ''}
+        ${totalPagoExtra > 0 ? `<p class="modal-sub" style="margin:0 0 20px;">· Pago extra manual: ${totalPagoExtra.toFixed(2)} €</p>` : '<div style="margin-bottom:16px;"></div>'}
+      ` : ''}
+      ${lugaresOrdenados.map(([lugar, h]) => `
+        <div class="bar-row">
+          <div class="bar-label"><span>${escapeHtml(lugar)}</span><span>${fmtHoras(h)}</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(h/maxLugar*100).toFixed(0)}%"></div></div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+/* --- Configuración: editar lugares --- */
+function renderConfiguracionLugares(){
+  const cont = document.getElementById('lugares-config-list');
+  if(!cont) return;
+  if(data.lugares.length === 0){
+    cont.innerHTML = '<p class="empty-day">Todavía no has creado ningún lugar de trabajo. Se añaden desde el calendario al registrar una jornada.</p>';
+  } else {
+    cont.innerHTML = data.lugares.map((lugar, idx) => `
+      <div class="lugar-row">
+        <input type="text" id="lugar-edit-${idx}" value="${escapeHtml(lugar)}">
+        <button onclick="guardarNombreLugar(${idx})">Guardar</button>
+      </div>
+    `).join('');
+  }
+  const precioInput = document.getElementById('precio-hora-input');
+  if(precioInput) precioInput.value = data.precioHora ? data.precioHora : '';
+}
+
+document.getElementById('btn-guardar-precio').onclick = () => {
+  const val = parseFloat(document.getElementById('precio-hora-input').value);
+  data.precioHora = isNaN(val) ? 0 : val;
+  save();
+  renderResumen();
+};
+
+function guardarNombreLugar(idx){
+  const input = document.getElementById('lugar-edit-'+idx);
+  const nuevoNombre = input.value.trim();
+  const nombreAnterior = data.lugares[idx];
+  if(!nuevoNombre || nuevoNombre === nombreAnterior) return;
+  if(data.lugares.includes(nuevoNombre)){
+    data.lugares.splice(idx,1);
+  } else {
+    data.lugares[idx] = nuevoNombre;
+  }
+  data.registros.forEach(r => { if(r.lugar === nombreAnterior) r.lugar = nuevoNombre; });
+  save();
+  renderConfiguracionLugares();
+  renderCalendario();
+  renderResumen();
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('view-'+btn.dataset.view).classList.add('active');
+  };
+});
+
+/* --- Menú de configuración (drawer) --- */
+document.getElementById('btn-menu').onclick = () => {
+  renderConfiguracionLugares();
+  document.getElementById('menu-overlay').classList.add('active');
+};
+document.getElementById('menu-close').onclick = () => {
+  document.getElementById('menu-overlay').classList.remove('active');
+};
+document.getElementById('menu-overlay').onclick = (e) => {
+  if(e.target.id === 'menu-overlay') document.getElementById('menu-overlay').classList.remove('active');
+};
+
+document.getElementById('btn-lugares').onclick = () => {
+  renderConfiguracionLugares();
+  document.getElementById('lugares-overlay').classList.add('active');
+};
+document.getElementById('lugares-close').onclick = () => {
+  document.getElementById('lugares-overlay').classList.remove('active');
+};
+document.getElementById('lugares-overlay').onclick = (e) => {
+  if(e.target.id === 'lugares-overlay') document.getElementById('lugares-overlay').classList.remove('active');
+};
+
+function aplicarTema(tema){
+  document.documentElement.setAttribute('data-theme', tema === 'oscuro' ? 'oscuro' : 'claro');
+  document.getElementById('tema-claro').classList.toggle('active', tema !== 'oscuro');
+  document.getElementById('tema-oscuro').classList.toggle('active', tema === 'oscuro');
+}
+
+document.querySelectorAll('.theme-option').forEach(btn => {
+  btn.onclick = () => {
+    data.tema = btn.dataset.tema;
+    aplicarTema(data.tema);
+    save();
+  };
+});
+
+load();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {
+      /* si se abre como archivo local (file://) el navegador no permite service workers; no pasa nada */
+    });
+  });
+}
+
+</script>
+</body>
+</html>
