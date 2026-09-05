@@ -701,8 +701,8 @@ function esVacacion(fechaStr){
 
 async function load(){
   try{
-    const res = await window.storage.get(STORAGE_KEY, false);
-    if(res && res.value){ data = JSON.parse(res.value); }
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){ data = JSON.parse(raw); }
   }catch(e){ /* sin datos todavia */ }
   if(!data.festivosLocales){ data.festivosLocales = FESTIVOS_LOCALES_DEFECTO.slice(); }
   if(data.festivosVersion !== 2){
@@ -724,7 +724,7 @@ async function load(){
   render();
 }
 async function save(){
-  try{ await window.storage.set(STORAGE_KEY, JSON.stringify(data), false); }
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
   catch(e){ console.error('No se pudo guardar', e); }
 }
 
